@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SakeLog - 大人のためのお酒記録 -</title>
+  <title>AclLog</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <!-- ヘッダー -->
   <header id="app-header" class="hidden">
-    <h1 class="logo">SakeLog</h1>
+    <h1 class="logo">AclLog</h1>
     <button id="btn-logout" class="text-btn">ユーザー切替</button>
   </header>
 
@@ -18,7 +18,7 @@
     <section id="view-login" class="view">
       <div class="login-container">
         <div class="login-logo">
-          <h1>SakeLog</h1>
+          <h1>AclLog</h1>
           <p>あなたの特別なお酒の記憶を。</p>
         </div>
         <div class="form-group">
@@ -46,15 +46,19 @@
         <select id="filter-rating">
           <option value="all">すべての評価</option>
           <option value="5">★★★★★</option>
-          <option value="4">★★★★☆ 以上</option>
-          <option value="3">★★★☆☆ 以上</option>
+          <option value="4">★★★★☆</option>
+          <option value="3">★★★☆☆</option>
+          <option value="3">★★☆☆☆</option>
+          <option value="3">★☆☆☆☆</option>
         </select>
         <select id="filter-location">
           <option value="all">すべての場所</option>
-          <option value="家">家</option>
           <option value="レストラン">レストラン</option>
           <option value="バー">バー</option>
           <option value="居酒屋">居酒屋</option>
+          <option value="蒸留所">蒸留所</option>
+          <option value="酒蔵">酒蔵</option>
+          <option value="家">家</option>
           <option value="その他">その他</option>
         </select>
       </div>
@@ -106,6 +110,8 @@
               <option value="ワイン">ワイン</option>
               <option value="ビール">ビール</option>
               <option value="焼酎">焼酎</option>
+              <option value="チューハイ">チューハイ</option>
+              <option value="カクテル">カクテル</option>
               <option value="その他">その他</option>
             </select>
           </div>
@@ -113,10 +119,12 @@
             <label>場所</label>
             <select id="form-location">
               <option value="">選択してください</option>
-              <option value="家">家</option>
               <option value="レストラン">レストラン</option>
               <option value="バー">バー</option>
               <option value="居酒屋">居酒屋</option>
+              <option value="蒸留所">蒸留所</option>
+              <option value="酒蔵">酒蔵</option>
+              <option value="家">家</option>
               <option value="その他">その他</option>
             </select>
           </div>
