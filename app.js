@@ -191,7 +191,7 @@ function renderList() {
   const filtered = state.records.filter(r => {
     if (catFilter !== 'all' && r.category !== catFilter) return false;
     if (locFilter !== 'all' && r.location !== locFilter) return false;
-    if (rateFilter !== 'all' && parseInt(r.rating || 0) < parseInt(rateFilter)) return false;
+    if (rateFilter !== 'all' && parseInt(r.rating || 0) !== parseInt(rateFilter)) return false;
     return true;
   });
 
