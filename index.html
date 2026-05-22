@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SakeLog - 大人のためのお酒記録 -</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header id="app-header" class="hidden">
+    <h1 class="logo">SakeLog</h1>
+    <button id="btn-logout" class="text-btn">ユーザー切替</button>
+  </header>
+
+  <main id="app">
+    <!-- 0. ログイン（ユーザー選択）画面 -->
+    <section id="view-login" class="view">
+      <div class="login-container">
+        <div class="login-logo">
+          <h1>SakeLog</h1>
+          <p>あなたの特別なお酒の記憶を。</p>
+        </div>
+        <div class="form-group">
+          <label for="input-username">お名前</label>
+          <input type="text" id="input-username" placeholder="例: Taro" autocomplete="off">
+        </div>
+        <button id="btn-login" class="btn-primary">はじめる</button>
+      </div>
+    </section>
+
+    <!-- 1. トップページ（一覧画面） -->
+    <section id="view-list" class="view hidden">
+      <div class="filters">
+        <select id="filter-category">
+          <option value="all">すべてのカテゴリ</option>
+          <option value="日本酒">日本酒</option>
+          <option value="ウィスキー">ウィスキー</option>
+          <option value="ワイン">ワイン</option>
+          <option value="ビール">ビール</option>
+          <option value="焼酎">焼酎</option>
+          <option value="その他">その他</option>
+        </select>
+        <select id="filter-rating">
+          <option value="all">すべての評価</option>
+          <option value="5">★★★★★</option>
+          <option value="4">★★★★☆ 以上</option>
+          <option value="3">★★★☆☆ 以上</option>
+        </select>
+        <select id="filter-location">
+          <option value="all">すべての場所</option>
+          <option value="家">家</option>
+          <option value="レストラン">レストラン</option>
+          <option value="バー">バー</option>
+          <option value="居酒屋">居酒屋</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      
+      <div id="list-container" class="list-container">
+        <!-- JSでカードが生成されます -->
+      </div>
+
+      <!-- 追加用FAB (Floating Action Button) -->
+      <button id="btn-add" class="fab">+</button>
+    </section>
+
+    <!-- 2. 追加登録 / 修正ページ -->
+    <section id="view-form" class="view hidden">
+      <div class="view-header">
+        <button class="icon-btn btn-back">← 戻る</button>
+        <h2 id="form-title">記録の追加</h2>
+        <div style="width: 24px;"></div> <!-- レイアウト調整用 -->
+      </div>
+
+      <div class="form-container">
+        <input type="hidden" id="form-id">
+        
+        <div class="form-group">
+          <label>お酒の名前 <span class="required">*</span></label>
+          <input type="text" id="form-name" placeholder="銘柄などを入力" required>
+        </div>
+
+        <div class="form-group">
+          <label>飲んだ日付</label>
+          <input type="date" id="form-date">
+        </div>
+
+        <div class="form-group">
+          <label>評価</label>
+          <div class="star-rating" id="form-rating-stars">
+            <span data-val="1">★</span><span data-val="2">★</span><span data-val="3">★</span><span data-val="4">★</span><span data-val="5">★</span>
+          </div>
+          <input type="hidden" id="form-rating" value="0">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>カテゴリ</label>
+            <select id="form-category">
+              <option value="">選択してください</option>
+              <option value="日本酒">日本酒</option>
+              <option value="ウィスキー">ウィスキー</option>
+              <option value="ワイン">ワイン</option>
+              <option value="ビール">ビール</option>
+              <option value="焼酎">焼酎</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>場所</label>
+            <select id="form-location">
+              <option value="">選択してください</option>
+              <option value="家">家</option>
+              <option value="レストラン">レストラン</option>
+              <option value="バー">バー</option>
+              <option value="居酒屋">居酒屋</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>一言コメント</label>
+          <textarea id="form-comment" rows="4" placeholder="香りや味の感想、一緒に食べたものなど"></textarea>
+        </div>
+
+        <button id="btn-save" class="btn-primary" style="margin-top: 16px;">保存する</button>
+      </div>
+    </section>
+
+    <!-- 3. 詳細ページ -->
+    <section id="view-detail" class="view hidden">
+      <div class="view-header">
+        <button class="icon-btn btn-back">← 戻る</button>
+        <h2>詳細情報</h2>
+        <div style="width: 24px;"></div>
+      </div>
+
+      <div class="detail-container">
+        <div class="detail-card">
+          <div class="detail-header">
+            <span id="detail-category" class="tag"></span>
+            <span id="detail-date" class="date-text"></span>
+          </div>
+          <h2 id="detail-name" class="detail-title"></h2>
+          <div id="detail-rating" class="stars"></div>
+          
+          <div class="detail-row">
+            <span class="detail-label">場所:</span>
+            <span id="detail-location"></span>
+          </div>
+          
+          <div class="detail-comment-box">
+            <p id="detail-comment"></p>
+          </div>
+        </div>
+
+        <button id="btn-edit" class="btn-secondary">内容を修正する</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ローディングオーバーレイ -->
+  <div id="loading" class="hidden">
+    <div class="spinner"></div>
+    <p>通信中...</p>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
