@@ -30,7 +30,23 @@ const loading = document.getElementById('loading');
 window.addEventListener('DOMContentLoaded', () => {
   if (state.userName) {
     showView('list');
-    fetchData();
+    
+    // 1. まずローカルのキャッシュがあれば即座に表示する
+    const cachedData = localStorage.getItem('sakeLogRecords_' + state.userName);
+    if (cachedData) {
+      try {
+        state.records = JSON.parse(cachedData);
+        renderList();
+        // キャッシュがある場合は「バックグラウンド通信（ローディング非表示）」で最新化
+        fetchData(true); 
+      } catch (e) {
+        // キャッシュ破損時は通常通り取得
+        fetchData(false);
+      }
+    } else {
+      // キャッシュがない（初めてその端末で開いた）場合はローディングを表示して取得
+      fetchData(false);
+    }
   } else {
     showView('login');
   }
@@ -52,27 +68,39 @@ function showView(viewName) {
 // ==============================================
 // API通信処理
 // ==============================================
-async function fetchData() {
+
+// isBackground=true の場合はローディング画面を出さずに裏で通信する
+async function fetchData(isBackground = false) {
   if (!state.userName) return;
-  showLoading(true);
+  if (!isBackground) showLoading(true);
+  
   try {
     const url = `${GAS_URL}?userName=${encodeURIComponent(state.userName)}`;
     const res = await fetch(url);
     const data = await res.json();
+    
     state.records = data;
+    // 取得した最新データをキャッシュに保存
+    localStorage.setItem('sakeLogRecords_' + state.userName, JSON.stringify(data));
+    
     renderList();
+    
+    // もし詳細画面を開いている最中にバックグラウンド更新が完了したら、詳細画面も更新
+    if (state.currentDataId && !views.detail.classList.contains('hidden')) {
+      openDetail(state.currentDataId, true);
+    }
+    
   } catch (err) {
-    alert('データの取得に失敗しました。通信環境を確認してください。');
+    if (!isBackground) alert('データの取得に失敗しました。通信環境を確認してください。');
     console.error(err);
   } finally {
-    showLoading(false);
+    if (!isBackground) showLoading(false);
   }
 }
 
 async function saveData(savePayload) {
-  showLoading(true);
+  showLoading(true); // 保存時は必ずローディングを出す
   try {
-    // CORSエラーを避けるため、オプション無し(text/plain)でPOST送信
     const res = await fetch(GAS_URL, {
       method: 'POST',
       body: JSON.stringify({
@@ -83,7 +111,7 @@ async function saveData(savePayload) {
     });
     const result = await res.json();
     if (result.success) {
-      await fetchData(); // リロードして一覧へ戻る
+      await fetchData(false); // 保存後は最新データを取得し直すためローディングを出す
       showView('list');
     } else {
       throw new Error(result.error);
@@ -100,19 +128,21 @@ async function saveData(savePayload) {
 // イベントリスナーの登録
 // ==============================================
 function setupEventListeners() {
-  // ログイン・ログアウト
   document.getElementById('btn-login').addEventListener('click', () => {
     const nameInput = document.getElementById('input-username').value.trim();
     if (!nameInput) return alert('名前を入力してください');
     state.userName = nameInput;
     localStorage.setItem('sakeLogUser', nameInput);
     showView('list');
-    fetchData();
+    fetchData(false); // ログイン直後はローディングを出す
   });
   
   document.getElementById('btn-logout').addEventListener('click', () => {
     if(confirm('ログアウト（ユーザー切り替え）しますか？')) {
+      // ログアウト時にキャッシュも削除する
+      localStorage.removeItem('sakeLogRecords_' + state.userName);
       localStorage.removeItem('sakeLogUser');
+      
       state.userName = '';
       state.records = [];
       document.getElementById('input-username').value = '';
@@ -120,26 +150,22 @@ function setupEventListeners() {
     }
   });
 
-  // 一覧画面の操作
   document.getElementById('btn-add').addEventListener('click', () => openForm());
   
-  // フィルター変更
   ['filter-category', 'filter-rating', 'filter-location'].forEach(id => {
     document.getElementById(id).addEventListener('change', renderList);
   });
 
-  // 戻るボタン
   document.querySelectorAll('.btn-back').forEach(btn => {
-    btn.addEventListener('click', () => showView('list'));
+    btn.addEventListener('click', () => {
+      state.currentDataId = null;
+      showView('list');
+    });
   });
 
-  // 詳細から編集へ
   document.getElementById('btn-edit').addEventListener('click', () => openForm(state.currentDataId));
-
-  // フォーム保存
   document.getElementById('btn-save').addEventListener('click', handleSave);
 
-  // フォームの星評価UI
   const stars = document.querySelectorAll('#form-rating-stars span');
   const ratingInput = document.getElementById('form-rating');
   stars.forEach(star => {
@@ -179,7 +205,6 @@ function renderList() {
     card.className = 'card';
     card.onclick = () => openDetail(r.id);
     
-    // 表示用文字列の生成
     const rateStr = '★'.repeat(r.rating || 0) + '☆'.repeat(5 - (r.rating || 0));
     const dateStr = r.date ? new Date(r.date).toLocaleDateString('ja-JP') : '日付未定';
     
@@ -195,7 +220,8 @@ function renderList() {
   });
 }
 
-function openDetail(id) {
+// isSilentUpdate=true の時は画面遷移を伴わず内容だけ書き換える
+function openDetail(id, isSilentUpdate = false) {
   const record = state.records.find(r => r.id.toString() === id.toString());
   if (!record) return;
   state.currentDataId = record.id;
@@ -212,7 +238,9 @@ function openDetail(id) {
   document.getElementById('detail-location').innerHTML = formatText(record.location);
   document.getElementById('detail-comment').innerHTML = formatText(record.comment);
 
-  showView('detail');
+  if (!isSilentUpdate) {
+    showView('detail');
+  }
 }
 
 function openForm(id = null) {
@@ -226,16 +254,15 @@ function openForm(id = null) {
     ids.forEach(key => {
       const fieldId = key.replace('form-', '');
       let val = record[fieldId] || '';
-      if(fieldId === 'date' && val) val = new Date(val).toISOString().split('T')[0]; // YYYY-MM-DD
+      if(fieldId === 'date' && val) val = new Date(val).toISOString().split('T')[0];
       document.getElementById(key).value = val;
     });
     const rating = record.rating || 0;
     document.getElementById('form-rating').value = rating;
     updateStarUI(rating);
   } else {
-    // 新規登録の初期値クリアと今日の日付セット
     ids.forEach(key => document.getElementById(key).value = '');
-    const today = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD形式 (Swedenロケールハック)
+    const today = new Date().toLocaleDateString('sv-SE');
     document.getElementById('form-date').value = today;
     document.getElementById('form-rating').value = 0;
     updateStarUI(0);
